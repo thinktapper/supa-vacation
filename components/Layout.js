@@ -15,6 +15,7 @@ import {
   UserIcon,
 } from '@heroicons/react/outline';
 import { ChevronDownIcon } from '@heroicons/react/solid';
+import { useSession, signOut } from 'next-auth/react';
 
 const menuItems = [
   {
@@ -35,17 +36,21 @@ const menuItems = [
   {
     label: 'Logout',
     icon: LogoutIcon,
-    onClick: () => null,
+    onClick: signOut,
   },
 ];
 
 const Layout = ({ children = null }) => {
+  const { data: session, status } = useSession()
+  const user = session?.user
+  const isLoadingUser = status === 'loading'
+
   const router = useRouter();
 
   const [showModal, setShowModal] = useState(false);
 
-  const user = null;
-  const isLoadingUser = false;
+  // const user = null;
+  // const isLoadingUser = false;
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -74,11 +79,13 @@ const Layout = ({ children = null }) => {
                 </a>
               </Link>
               <div className="flex items-center space-x-4">
-                <Link href="/create">
-                  <a className="hidden sm:block hover:bg-gray-200 transition px-3 py-1 rounded-md">
+                <button
+                  onClick={() => {
+                    session?.user ? router.push('/create') : openModal();
+                  }}
+                  className="hidden sm:block hover:bg-gray-200 transition px-3 py-1 rounded-md">
                     List your home
-                  </a>
-                </Link>
+                  </button>
                 {isLoadingUser ? (
                   <div className="h-8 w-[75px] bg-gray-200 animate-pulse rounded-md" />
                 ) : user ? (

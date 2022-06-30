@@ -1,12 +1,44 @@
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Card from '@/components/Card';
 import { ExclamationIcon } from '@heroicons/react/outline';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 
 const Grid = ({ homes = [] }) => {
+  const { data: session } = useSession()
+  const [favorites, setFavorites] = useState([])
+
   const isEmpty = homes.length === 0;
+
+  useEffect(() => {
+    (async () => {
+      if(session?.user){
+        const fetchFavorites = async () => {
+          const res = await axios.get(`/api/user/favorites`)
+          setFavorites(res.data.favorites)
+        }
+
+        fetchFavorites()
+      }
+    })();
+  }, [session?.user]);
 
   const toggleFavorite = async id => {
     // TODO: Add/remove home from the authenticated user's favorites
+    if(favorites.includes(id)){
+      const res = await axios.delete(`/api/homes/${id}/favorite`)
+      if(res.status === 200){
+        console.log(res)
+        setFavorites(favorites => favorites.filter(homeId => homeId !== id))
+      }
+    }else{
+      const res = await axios.put(`/api/homes/${id}/favorite`)
+      if(res.status === 200){
+        setFavorites(favorites => [...favorites, id])
+      }
+    }
   };
 
   return isEmpty ? (
