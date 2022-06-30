@@ -19,17 +19,18 @@ export async function getServerSideProps(context) {
 
   // Get all favorites from the authenticated user
 //   const { id } = session.user.id
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { favoriteHomes: true },
+  const homes = await prisma.home.findMany({
+    where: {
+      favoritedBy: { some: { email: session.user.email } },
+    },
+    orderBy: { createdAt: 'desc' },
   });
 
-  // Pass the data to the Favorites component
+  // Pass the data to the Homes component
   return {
     props: {
-    //   homes: JSON.parse(JSON.stringify(homes)),
-        homes: user?.favoriteHomes
-    }
+      homes: JSON.parse(JSON.stringify(homes)),
+    },
   };
 }
 

@@ -4,40 +4,44 @@ import Card from '@/components/Card';
 import { ExclamationIcon } from '@heroicons/react/outline';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
 
 const Grid = ({ homes = [] }) => {
-  const { data: session } = useSession()
-  const [favorites, setFavorites] = useState([])
+  // const { data: session } = useSession()
+  const [favorites, setFavorites] = useState([]);
 
   const isEmpty = homes.length === 0;
 
   useEffect(() => {
     (async () => {
-      if(session?.user){
-        const fetchFavorites = async () => {
-          const res = await axios.get(`/api/user/favorites`)
-          setFavorites(res.data.favorites)
-        }
-
-        fetchFavorites()
+      try {
+        const { data } = await axios.get('/api/user/favorites');
+        setFavorites(data);
+      } catch (err) {
+        setFavorites([]);
       }
     })();
-  }, [session?.user]);
+  }, []);
 
-  const toggleFavorite = async id => {
-    // TODO: Add/remove home from the authenticated user's favorites
-    if(favorites.includes(id)){
-      const res = await axios.delete(`/api/homes/${id}/favorite`)
-      if(res.status === 200){
-        console.log(res)
-        setFavorites(favorites => favorites.filter(homeId => homeId !== id))
-      }
-    }else{
-      const res = await axios.put(`/api/homes/${id}/favorite`)
-      if(res.status === 200){
-        setFavorites(favorites => [...favorites, id])
-      }
+  const toggleFavorite = id => {
+    // Add/remove home from the authenticated user's favorites
+    try {
+      toast.dismiss('updateFavorite');
+      setFavorites(prev => {
+        const isFavorite = prev.find(favoriteId => favoriteId === id);
+        // Remove from favorite
+        if(isFavorite){
+          axios.delete(`/api/homes/${id}/favorite`);
+          return prev.filter(favoriteId => favoriteId !== id);
+        }
+        // Add to favorite
+        else{
+          axios.put(`/api/homes/${id}/favorite`);
+          return [...prev, id];
+        }
+      });
+    } catch (err) {
+      toast.error('Unable to update favorite', { id: 'updateFavorite' });
     }
   };
 
@@ -49,7 +53,11 @@ const Grid = ({ homes = [] }) => {
   ) : (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {homes.map(home => (
-        <Card key={home.id} {...home} onClickFavorite={toggleFavorite} />
+        <Card
+          key={home.id} {...home}
+          onClickFavorite={toggleFavorite}
+          favorite={!!favorites.find(favoriteId => favoriteId === home.id)}
+        />
       ))}
     </div>
   );

@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma";
 import { getSession } from "next-auth/react"
 
-const prisma = new PrismaClient()
 
 export default async function handler(req, res) {
     // Check if user is authenticated
@@ -22,7 +21,7 @@ export default async function handler(req, res) {
             const home = await prisma.home.create({
                 data: { image, title, description, price, guests, beds, baths, ownerId: user.id },
             })
-            // res.status(200).json(home)
+            res.status(200).json(home)
         }catch(err){
             res.status(500).json({ message: 'Something went wrong' })
         }
